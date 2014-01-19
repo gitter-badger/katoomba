@@ -1,0 +1,5 @@
+# Copy this file to config.py and set the values
+
+confluenceHost = 'wiki.example.com'
+confluenceUser = 'myusername'
+confluencePass = 'mypassword'
