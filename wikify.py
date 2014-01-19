@@ -33,31 +33,29 @@ def getAll(requestLink):
 categories = getAll('https://www.biodiversitycatalogue.org/categories')
 
 categoryParent = {}
-categoryName = {
-    None: 'Uncategorised services'
-}
-categoryServices = {
-    None: []
-}
+categoryName = {}
+categorisedServices = {}
+uncategorisedServices = {}
 
 for category in categories:
     link = category['resource']
     response = requests.get(link, headers=requestJSON)
     cat = response.json()['category']
-    categoryName[link] = cat['name']
+    catName = cat['name']
+    categoryName[link] = catName
     parent = cat.get('broader')
     if parent:
         categoryParent[link] = parent['resource']
     else:
         categoryParent[link] = None
-        categoryServices[link] = []
+        categorisedServices[catName] = {}
 
 results = getAll('https://www.biodiversitycatalogue.org/services')
 
 for serviceJson in results:
     content = ''
     serviceLink = serviceJson['resource']
-    content += '<h2>%s</h2>\n' % escape(serviceJson['name'])
+    name = serviceJson['name']
     description = serviceJson['description']
     if description is None:
         description = '<p><strong>No description provided</strong></p>'
@@ -109,18 +107,18 @@ for serviceJson in results:
         content += '<p>Publication: %s</p>\n' % escape(publication)
     content += '<p>More information at <a href="%s">BiodiversityCatalogue</a>, submitted by %s\n' % (serviceLink, submitter)
 
-    tlc = set()
     if categoryIds:
+        tlc = set()
         for categoryId in categoryIds:
             parentId = categoryParent[categoryId]
             while parentId is not None:
                 categoryId = parentId
                 parentId = categoryParent[categoryId]
-            tlc.add(categoryId)
+            tlc.add(categoryName[categoryId])
+        for topLevel in tlc:
+            categorisedServices[topLevel][name] = content
     else:
-        tlc.add(None)
-    for topLevel in tlc:
-        categoryServices[topLevel].append(content)
+        uncategorisedServices[name] = content
 
 final = '<ac:macro ac:name="toc" />\n'
 # '''<ac:structured-macro ac:name="toc" xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/">
@@ -136,11 +134,18 @@ final = '<ac:macro ac:name="toc" />\n'
 #   <ac:parameter ac:name="include">.*</ac:parameter>
 # </ac:structured-macro>
 # '''
-for categoryId, services in categoryServices.items():
+
+for catName, services in sorted(categorisedServices.items()):
     if services:
-        final += '<h1>%s</h1>\n<hr/>\n' % categoryName[categoryId]
-        for service in services:
+        final += '<h1>%s</h1>\n<hr/>\n' % escape(catName)
+        for name, service in sorted(services.items()):
+            final += '<h2>%s</h2>\n' % escape(name)
             final += service
+if uncategorisedServices:
+    final += '<h1>Uncategorised Services</h1>\n'
+    for name, service in sorted(uncategorisedServices.items()):
+        final += '<h2>%s</h2>\n' % escape(name)
+        final += service
 
 content = final
 
