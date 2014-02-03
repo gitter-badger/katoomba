@@ -1,7 +1,28 @@
-import cgi, requests
+import re, requests
 
 def escape(text):
-    return cgi.escape(text).encode('ascii', 'xmlcharrefreplace')
+    import cgi
+    return cgi.escape(text).encode('ascii', 'xmlcharrefreplace').replace('\n', '<br />')
+
+titleRE = re.compile('<title>([^<]+)</title>', re.IGNORECASE)
+
+def massageLink(link):
+    html = '<a href="%s"><code>%s</code></a>' % (link, link)
+    try:
+        response = requests.get(link, verify = False)
+    except requests.exceptions.ConnectionError:
+        html += ' <span style="color: rgb(255,0,0);">(Link did not respond)</span>'
+    else:
+        status_code = response.status_code
+        if status_code < 400:
+            m = titleRE.search(response.text)
+            if m:
+                title = m.group(1).strip().replace('\n', ' ')
+                if title:
+                    html = '<a href="%s">%s</a>' % (link, escape(title))
+        else:
+            html += ' <span style="color: rgb(255,0,0);">(Link returned status %d)</span>' % status_code
+    return html
 
 requestJSON = {'Accept': 'application/json'}
 
@@ -53,18 +74,15 @@ for category in categories:
 results = getAll('https://www.biodiversitycatalogue.org/services')
 
 for serviceJson in results:
+    print serviceJson
     content = ''
     serviceLink = serviceJson['resource']
     name = serviceJson['name']
-    description = serviceJson['description']
-    if description is None:
-        description = '<p><strong>No description provided</strong></p>'
-    else:
-        description = '<p>' + escape(description.strip()) + '</p>'
-    content += '%s\n' % description
     submitterLink = serviceJson['submitter']
-    request = requests.get(submitterLink, headers=requestJSON)
-    user = request.json()['user']
+    response = requests.get(submitterLink, headers=requestJSON)
+    json = response.json()
+    print json
+    user = json['user']
     submitter = user['name']
     org = user['affiliation']
     if org:
@@ -72,40 +90,49 @@ for serviceJson in results:
     email = user['public_email']
     if email:
         submitter += ' (%s)' % email
+    serviceId = serviceLink[serviceLink.rfind('/') + 1:]
+    content += '<p><small>Submitted as <a href="%s">BiodiversityCatalogue service #%s</a> by %s</small></p>\n' % (serviceLink, serviceId, submitter)
     annotations = getAll(serviceLink + '/annotations')
     categoryIds = []
     for annotation in annotations:
         if annotation['attribute']['identifier'] == 'http://biodiversitycatalogue.org/attribute/category':
             categoryIds.append(annotation['value']['resource'])
     if categoryIds:
-        content += '<p>Categories:\n<ul>\n'
-        for categoryId in categoryIds:
-            content += '<li>%s</li>\n' % escape(categoryName[categoryId])
-            pass
-        content += '</ul></p>\n'
-    request = requests.get(serviceLink + '/summary', headers=requestJSON)
-    summary = request.json()['service']['summary']
+        content += '<p>Categories: %s</p>\n' % ', '.join([escape(categoryName[categoryId]) for categoryId in categoryIds])
+    description = serviceJson['description']
+    if description is None:
+        description = '<p><span style="color: rgb(255,0,0);">No description provided</span></p>'
+    else:
+        description = '<p>' + escape(description.strip()) + '</p>'
+    content += '%s\n' % description
+    response = requests.get(serviceLink + '/summary', headers=requestJSON)
+    json = response.json()
+    print json
+    service = json['service']
+    summary = service['summary']
     docLinks = summary['documentation_urls']
     if docLinks:
         for docLink in docLinks:
-            content += '<p>Documentation: <code><a href="%s">%s</a></code></p>\n' % (docLink, docLink)
+            content += '<p>Documentation: %s</p>\n' % massageLink(docLink)
             if docLink.startswith('http://wiki.biovel.eu') or docLink.startswith('https://wiki.biovel.eu'):
                 if docLink.startswith('http://wiki.biovel.eu/x/') or docLink.startswith('https://wiki.biovel.eu/x/'):
                     pass
                 else:
-                    content += '<p><strong>Links to BioVeL Wiki should use short links</strong></p>\n'
+                    content += '<p><span style="color: rgb(255,0,0);">Links to BioVeL Wiki should use short links</span></p>\n'
     else:
-        content += '<p><strong>No documentation</strong></p>\n'
+        content += '<p><span style="color: rgb(255,0,0);">No link to documentation</span></p>\n'
+    content += '<p>Service provider: %s</p>\n' % escape(', '.join([provider['service_provider']['name'] for provider in summary['providers']]))
+    # content += '<p>Service protocol: %s</p>\n' % escape(', '.join(service['service_technology_types']))
+
     contacts = summary['contacts']
     if contacts:
         for contact in contacts:
             content += '<p>Contact: %s</p>\n' % escape(contact)
     else:
-        content += '<p><strong>No contact listed</strong></p>\n'
+        content += '<p><span style="color: rgb(255,0,0);">No support contact listed</span></p>\n'
     publications = summary['publications']
     for publication in publications:
         content += '<p>Publication: %s</p>\n' % escape(publication)
-    content += '<p>More information at <a href="%s">BiodiversityCatalogue</a>, submitted by %s\n' % (serviceLink, submitter)
 
     if categoryIds:
         tlc = set()
@@ -120,32 +147,39 @@ for serviceJson in results:
     else:
         uncategorisedServices[name] = content
 
-final = '<ac:macro ac:name="toc" />\n'
-# '''<ac:structured-macro ac:name="toc" xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/">
-#   <ac:parameter ac:name="printable">true</ac:parameter>
-#   <ac:parameter ac:name="style">square</ac:parameter>
-#   <ac:parameter ac:name="maxLevel">2</ac:parameter>
-#   <ac:parameter ac:name="indent">5px</ac:parameter>
-#   <ac:parameter ac:name="minLevel">2</ac:parameter>
-#   <ac:parameter ac:name="class">bigpink</ac:parameter>
-#   <ac:parameter ac:name="exclude">[1//2]</ac:parameter>
-#   <ac:parameter ac:name="type">list</ac:parameter>
-#   <ac:parameter ac:name="outline">true</ac:parameter>
-#   <ac:parameter ac:name="include">.*</ac:parameter>
-# </ac:structured-macro>
-# '''
+final = """
+<div class="contentLayout" data-atlassian-layout="{&quot;name&quot;:&quot;pagelayout-two-simple-right&quot;,&quot;columns&quot;:[&quot;large&quot;,&quot;aside&quot;]}">
+  <div class="columnLayout twoColumns">
+      <div class="cell large">
+          <div class="innerCell">
+"""
+
 
 for catName, services in sorted(categorisedServices.items()):
     if services:
-        final += '<h1>%s</h1>\n<hr/>\n' % escape(catName)
+        final += '<hr/>\n\n<h2>%s</h2>\n<hr/>\n' % escape(catName)
         for name, service in sorted(services.items()):
-            final += '<h2>%s</h2>\n' % escape(name)
+            final += '\n<h3>%s</h3>\n' % escape(name)
             final += service
+            final += '<hr/>\n'
 if uncategorisedServices:
-    final += '<h1>Uncategorised Services</h1>\n'
+    final += '<hr/>\n\n<h2>Uncategorised Services</h2>\n<hr/>\n'
     for name, service in sorted(uncategorisedServices.items()):
-        final += '<h2>%s</h2>\n' % escape(name)
+        final += '\n<h3>%s</h3>\n' % escape(name)
         final += service
+        final += '<hr/>\n'
+
+final += """
+          </div>
+      </div>
+      <div class="cell aside">
+          <div class="innerCell">
+              <ac:macro ac:name="toc" />
+          </div>
+      </div>
+  </div>
+</div>
+"""
 
 content = final
 
