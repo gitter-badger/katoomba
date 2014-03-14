@@ -12,6 +12,8 @@ def massageLink(link):
         response = requests.get(link, verify = False)
     except requests.exceptions.ConnectionError:
         html += ' <span style="color: rgb(255,0,0);">(Link did not respond)</span>'
+    except requests.exceptions.MissingSchema:
+        html = '%s (Not a valid link)' % escape(link)
     else:
         status_code = response.status_code
         if status_code < 400:
@@ -183,7 +185,7 @@ final += """
 
 content = final
 
-# Ensure the remote API has been enabled 
+# Ensure the remote API has been enabled
 # https://confluence.atlassian.com/display/DOC/Enabling+the+Remote+API
 
 requestJSON = {
@@ -207,7 +209,7 @@ kw = dict(
         }
     )
 
-response = requests.post(confluenceBase + '/getPage', 
+response = requests.post(confluenceBase + '/getPage',
     data=json.dumps(['BioVeL', 'Automatic Service Summary']), **kw)
 print response.url
 response.raise_for_status()
@@ -215,7 +217,7 @@ print response.text
 page = response.json()
 
 if page['content'] != content:
-    # Although Confluence documentation states that additional arguments are 
+    # Although Confluence documentation states that additional arguments are
     # ignored, updates fail unless we use the bare minimum of required arguments.
     update = {
         'id': page['id'],
