@@ -1,0 +1,8 @@
+#!/bin/sh
+
+KATOOMBA_HOME=.
+
+PYTHONPATH=${KATOOMBA_HOME}
+export PYTHONPATH
+
+exec python3 -m katoomba "$@"
