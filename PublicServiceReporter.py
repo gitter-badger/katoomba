@@ -100,7 +100,7 @@ def report(service):
         raise DoNotInclude()
     if categories:
         content += '<h2>Categories</h2>'
-        content += '<p>Categories: %s</p>\n' % ', '.join([htmlText(category) for category in categories])
+        content += '<p>%s</p>\n' % ', '.join([htmlText(category) for category in categories])
     else:
         level[2].append('Add service to a category')
 
