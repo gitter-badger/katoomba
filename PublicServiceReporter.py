@@ -83,8 +83,16 @@ def report(service):
                 safe_mode = 'escape'
                 )
             assert html
+            # Add each description into a panel to separate
+            content += '''<ac:structured-macro ac:name="panel">
+  <ac:parameter ac:name="bgColor">#ffffff</ac:parameter>
+  <ac:parameter ac:name="borderWidth">2</ac:parameter>
+  <ac:parameter ac:name="borderStyle">solid</ac:parameter>
+  <ac:parameter ac:name="borderColor">#cccc66</ac:parameter>
+  <ac:rich-text-body>'''
             content += html
-
+            content += '''</ac:rich-text-body>
+</ac:structured-macro>'''
     categories = [category.name for category in summary.categories]
     if 'BioVeL' in categories:
         categories.remove('BioVeL')
@@ -196,14 +204,17 @@ def report(service):
         for item in level[3]:
             evaluation += '<p>- %s</p>\n' % item
     else:
-        evaluation += '<p><b>Provisional maturity level: 3</b> (subject to manual review)</p>\n'
+        # evaluation += '<p><b>Provisional maturity level: 3</b> (subject to manual review)</p>\n'
+        pass
     if other:
         evaluation += '<p>Other issues, not affecting maturity level:</p>\n'
         for item in other:
             evaluation += '<p>- %s</p>\n' % item
 
-    content += '<h2>Actions to improve the service</h2>'
-    content += evaluation
+    if evaluation:
+        content += '<h2>Actions to improve the service description</h2>'
+        content += evaluation
+
     return content
 
 if __name__ == '__main__':

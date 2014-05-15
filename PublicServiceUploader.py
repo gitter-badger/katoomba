@@ -149,4 +149,4 @@ if __name__ == '__main__':
 '''
     content += '</ac:layout>\n'
 
-    publish(content, 'doc', 'BioVeL Services', getPageId('doc', 'BioVeL Services'))
+    publish(content, 'doc', 'BioVeL Services', getPageId('doc', 'Start'))
