@@ -1,5 +1,5 @@
 import html, re
-import requests
+import isodate, requests
 
 from ServiceCatalographer import ServiceCatalographer
 
@@ -54,10 +54,10 @@ def report(service):
     level = ([], [], [], [])
     other = []
 
-    content = '<h2>Service name</h2>'
-    content += '<a href="%s">%s</a>' % ((htmlAttr(service.self), htmlText(service.name)))
-    content += '<h2>Created in BiodiversityCatalogue</h2>'
-    content += '<p>%s</p>' % htmlText(service.created_at)
+    content = ''
+    content += '<p><b><a href="%s">%s</a></b>' % ((htmlAttr(service.self), htmlText(service.name)))
+    content += ' created in <ac:structured-macro ac:name="biodivcat"></ac:structured-macro> on '
+    content += '%s.</p>' % htmlText(isodate.parse_datetime(service.created_at).strftime('%b %d, %Y at %H:%M UTC'))
 
     # Getting the first summary attribute fetches the summary contents. Those
     # contents have 'service' and 'summary' objects to get to the real content.

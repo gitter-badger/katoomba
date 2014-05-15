@@ -6,7 +6,13 @@ Currently, this is geared towards reading BiodiversityCatalogue and reporting
 to the BioVeL Wiki.
 
 ## Setup
-Katoomba requires Python 3 and the Python requests package.
+Katoomba requires Python 3 and the Python `isodate` and `requests` packages.
+
+On recent Debian/Ubuntu distributions:
+```
+$ sudo apt-get install python3 pip3
+$ sudo pip3 install isodate requests
+```
 
 Copy the file `config.py.in` to `config.py` and edit the values.
 
