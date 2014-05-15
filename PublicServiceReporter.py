@@ -56,7 +56,7 @@ def report(service):
 
     content = ''
     content += '<p><b><a href="%s">%s</a></b>' % ((htmlAttr(service.self), htmlText(service.name)))
-    content += ' created in <ac:structured-macro ac:name="biodivcat"></ac:structured-macro> on '
+    content += ' published in <ac:structured-macro ac:name="biodivcat"></ac:structured-macro> on '
     content += '%s.</p>' % htmlText(isodate.parse_datetime(service.created_at).strftime('%b %d, %Y at %H:%M UTC'))
 
     # Getting the first summary attribute fetches the summary contents. Those
