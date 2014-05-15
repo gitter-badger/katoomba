@@ -60,5 +60,5 @@ if __name__ == '__main__':
 '''
     content += '</ac:layout>\n'
 
-    print('Publishing %s' % pageName)
+    print('Publishing %s' % confluenceParentTitle)
     confluence.publish(content, confluenceSpaceKey, confluenceParentTitle, confluence.getPageId(confluenceSpaceKey, 'Start'))
