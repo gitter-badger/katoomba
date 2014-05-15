@@ -3,7 +3,5 @@
 confluenceHost = 'wiki.example.com'
 confluenceUser = 'myusername'
 confluencePass = 'mypassword'
-confluenceSpaceKey = 'BioVeL'
-confluenceParentTitle = 'Automatic Service Summary'
 
-serviceCatalographerUrl = 'https://www.biodiversitycatalogue.org/'
+serviceCatalographerURL = 'https://www.biodiversitycatalogue.org/'

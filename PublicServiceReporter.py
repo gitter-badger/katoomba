@@ -183,6 +183,117 @@ def report(service):
         content += '<tr>'.join(text)
     content += '</table>\n'
 
+    svcDesc = ''
+    for variant in service.variants:
+        resource = variant.resource
+        if hasattr(resource, 'soap_service'):
+            interface = resource.soap_service
+            name = '%s (SOAP)' % variant.name
+            svcDesc += '<h2>%s</h2>\n' % htmlText(name)
+            wsdl_location = interface.wsdl_location
+            if wsdl_location is None:
+                svcDesc += '<p>%s</p>' % alert('No WSDL document')
+                level[2].append('Add link to WSDL document')
+            else:
+                svcDesc += '<p>WSDL: <a href="%s"><code>%s</code></a></p>\n' % (htmlAttr(interface.wsdl_location), htmlText(interface.wsdl_location))
+            documentation_url = interface.documentation_url
+            if documentation_url is not None:
+                link, action = massageLink(documentation_url)
+            else:
+                link = alert('No documentation')
+            svcDesc += '<p>Documentation: %s</p>\n' % link
+            if not interface.operations:
+                level[2].append('Add description of available operations for variant %s' % name)
+            for operation in interface.operations:
+                soap_operation = operation.resource.soap_operation
+                svcDesc += '<h3>%s</h3>\n' % htmlText(soap_operation.name)
+                descriptions = [soap_operation.description]
+                annotations = soap_operation.annotations.annotations.results
+                for annotation in annotations:
+                    if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/description':
+                        descriptions.append(annotation.value.content)
+                for description in descriptions:
+                    svcDesc += '<p>%s</p>\n' % htmlText(description)
+
+                inputs = soap_operation.inputs
+                if inputs:
+                    svcDesc += '<h4>Inputs</h4>\n'
+                    for input in inputs:
+                        svcDesc += '<p><b>%s</b> - %s</p>\n' % (htmlText(input.name), check(input.description, 'No description'))
+                        if input.description is None:
+                            level[3].append('Add description to operation "%s" input "%s"' % (htmlText(soap_operation.name), htmlText(input.name)))
+                        annotations = input.resource.soap_input.annotations.annotations.results
+                        for annotation in annotations:
+                            if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
+                                example = annotation.value.content
+                                svcDesc += '<p>Example:\n<code>%s</code></p>\n' % htmlText(example)
+                outputs = soap_operation.outputs
+                if outputs:
+                    svcDesc += '<h4>Outputs</h4>\n'
+                    for output in outputs:
+                        svcDesc += '<p><b>%s</b> - %s</p>\n' % (htmlText(output.name), check(output.description, 'No description'))
+                        if output.description is None:
+                            level[3].append('Add description to operation "%s" output "%s"' % (htmlText(soap_operation.name), htmlText(output.name)))
+                        annotations = output.resource.soap_output.annotations.annotations.results
+                        for annotation in annotations:
+                            if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
+                                example = annotation.value.content
+                                svcDesc += '<p>Example:\n<code>%s</code></p>\n' % htmlText(example)
+        else:
+            interface = resource.rest_service
+            name = '%s (REST)' % variant.name
+            svcDesc += '<h2>%s</h2>\n' % htmlText(name)
+            documentation_url = interface.documentation_url
+            if documentation_url is not None:
+                link, action = massageLink(documentation_url)
+            else:
+                link = alert('No documentation')
+            svcDesc += '<p>Documentation: %s</p>\n' % link
+            if not interface.resources:
+                level[2].append('Add description of available operations for variant %s' % name)
+            for operation in interface.resources:
+                rest_operation = operation.resource.rest_resource.methods
+                for method in rest_operation:
+                    svcDesc += '<h3>%s</h3>\n' % htmlText(method.endpoint_label)
+                    if method.description:
+                        descriptions = [method.description]
+                        for description in descriptions:
+                            svcDesc += '<p>%s</p>\n' % htmlText(description)
+                    else:
+                        svcDesc += '<p>%s</p>' % alert('No description')
+                        level[2].append('Add description to operation "%s"' % htmlText(method.endpoint_label))
+
+                    inputs = method.resource.rest_method.inputs.parameters
+                    if inputs:
+                        svcDesc += '<h4>Inputs</h4>\n'
+                        for input in inputs:
+                            if input.description:
+                                description = htmlText(input.description)
+                            else:
+                                description = alert('No description')
+                                level[3].append('Add description to operation "%s" input "%s"' % (htmlText(method.endpoint_label), htmlText(input.name)))
+                            svcDesc += '<p><b>%s</b> - %s</p>\n' % (htmlText(input.name), description)
+                            annotations = input.resource.rest_parameter.annotations.annotations.results
+                            for annotation in annotations:
+                                if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
+                                    example = annotation.value.content
+                                    svcDesc += '<p>Example:\n<code>%s</code></p>\n' % htmlText(example)
+                    outputs = method.resource.rest_method.outputs.parameters
+                    if outputs:
+                        svcDesc += '<h4>Outputs</h4>\n'
+                        for output in outputs:
+                            if output.description:
+                                description = htmlText(output.description)
+                            else:
+                                description = alert('No description')
+                                level[3].append('Add description to operation "%s" output "%s"' % (htmlText(method.endpoint_label), htmlText(input.name)))
+                            svcDesc += '<p><b>%s</b> - %s</p>\n' % (htmlText(output.name), description)
+                            annotations = output.resource.rest_parameter.annotations.annotations.results
+                            for annotation in annotations:
+                                if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
+                                    example = annotation.value.content
+                                    svcDesc += '<p>Example:\n<code>%s</code></p>\n' % htmlText(example)
+
     evaluation = ''
     if level[0]:
         evaluation += '<p>To allow further evaluation, please solve these problems:</p>'

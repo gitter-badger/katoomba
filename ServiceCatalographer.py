@@ -70,7 +70,6 @@ class Resource:
         try:
             return self[name]
         except KeyError:
-            sys.stderr.write('%r\n' % self)
             raise AttributeError(name)
 
 
