@@ -4,7 +4,7 @@ from config import confluenceHost, confluenceUser, confluencePass, serviceCatalo
 # The Wiki space and top-level page to index each service
 # This page will be completely overwritten by the script!
 confluenceSpaceKey = 'doc'
-confluenceParentTitle = 'BioVeL Services'
+confluenceParentTitle = 'Supported Services'
 
 if __name__ == '__main__':
     confluence = Confluence.Server(confluenceHost, confluenceUser, confluencePass)
@@ -29,10 +29,16 @@ if __name__ == '__main__':
             confluence.publish(content, confluenceSpaceKey, pageName, parentId)
             pageNameMap[service.name] = pageName
     content = '<ac:layout>'
-    content += '<ac:layout-section ac:type="two_equal">\n'
+    ncols = 2
+    assert ncols in (2,3), ncols
+    if ncols == 2:
+        content += '<ac:layout-section ac:type="two_equal">\n'
+    else:
+        content += '<ac:layout-section ac:type="three_equal">\n'
     sortedKeys = sorted(pageNameMap, key=str.lower)
-    split = (len(pageNameMap) + 1) // 2
-    for subKeys in (sortedKeys[:split], sortedKeys[split:]):
+    split = (len(pageNameMap) + ncols - 1) // ncols
+    for i in range(0, len(sortedKeys), split):
+        subKeys = sortedKeys[i:i+split]
         content += '<ac:layout-cell>'
         for serviceName in subKeys:
             content += '''
