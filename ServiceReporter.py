@@ -125,7 +125,7 @@ def report(service):
         else:
             assert hasattr(variant.resource, 'rest_service'), variant.resource
             name += ' (REST)'
-        v.description = '<a href="%s">%s</a>' % (htmlAttr(variant.resource), htmlText(name))
+        v.description = '<a href="%s">%s</a>' % (htmlAttr(service.self + '/service_endpoint'), htmlText(name))
         v.deployments = []
     for deployment in service.deployments:
         provided_variant = deployment.resource.service_deployment.provided_variant
