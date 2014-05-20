@@ -29,7 +29,7 @@ if __name__ == '__main__':
             confluence.publish(content, confluenceSpaceKey, pageName, parentId)
             pageNameMap[service.name] = pageName
     content = '<ac:layout>'
-    ncols = 2
+    ncols = 3
     assert ncols in (2,3), ncols
     if ncols == 2:
         content += '<ac:layout-section ac:type="two_equal">\n'

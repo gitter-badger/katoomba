@@ -97,7 +97,8 @@ def report(service):
     if 'BioVeL' in categories:
         categories.remove('BioVeL')
     else:
-        raise DoNotInclude()
+        # raise DoNotInclude()
+        pass
     if categories:
         content += '<h2>Categories</h2>'
         content += '<p>%s</p>\n' % ', '.join([htmlText(category) for category in categories])
