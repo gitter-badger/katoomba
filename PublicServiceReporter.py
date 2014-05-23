@@ -1,5 +1,5 @@
 import html, re
-import isodate, requests
+import isodate, markdown, requests
 
 from ServiceCatalographer import ServiceCatalographer
 
@@ -77,7 +77,6 @@ def report(service):
         content += '<h2>Description</h2>'
         for description in descriptions:
             # content += '<p>%s</p>\n' % htmlText(description.strip())
-            import markdown
             html = markdown.markdown(description.strip(),
                 extensions = ['extra'], output_format = 'xhtml1',
                 safe_mode = 'escape'
@@ -93,6 +92,7 @@ def report(service):
             content += html
             content += '''</ac:rich-text-body>
 </ac:structured-macro>'''
+
     categories = [category.name for category in summary.categories]
     if 'BioVeL' in categories:
         categories.remove('BioVeL')
@@ -120,21 +120,39 @@ def report(service):
     if contacts:
         content += '<h2>Contact</h2>'
         for contact in contacts:
-            content += '<p>%s</p>\n' % htmlText(contact)
+            html = markdown.markdown(contact.strip(),
+                extensions = ['extra'], output_format = 'xhtml1',
+                safe_mode = 'escape'
+                )
+            assert html
+            # Add each description into a panel to separate
+            content += '''<ac:structured-macro ac:name="panel">
+  <ac:parameter ac:name="bgColor">#ffffff</ac:parameter>
+  <ac:parameter ac:name="borderWidth">2</ac:parameter>
+  <ac:parameter ac:name="borderStyle">solid</ac:parameter>
+  <ac:parameter ac:name="borderColor">#cccc66</ac:parameter>
+  <ac:rich-text-body>'''
+            content += html
+            content += '''</ac:rich-text-body>
+</ac:structured-macro>'''
     else:
         level[1].append('Add contact')
 
+    content += '<h2>Publications</h2>'
     publications = summary.publications
     if publications:
-        content += '<h2>Publications</h2>'
         for publication in publications:
             content += '<p>%s</p>\n' % htmlText(publication)
+    else:
+        content += '<p>No information provided.</p>\n'
 
+    content += '<h2>Citations</h2>'
     citations = summary.citations
     if citations:
-        content += '<h2>Citations</h2>'
         for citation in citations:
             content += '<p>%s</p>\n' % htmlText(citation)
+    else:
+        content += '<p>No information provided.</p>\n'
 
     # licenses = summary.licenses
     # if licenses:
@@ -143,6 +161,12 @@ def report(service):
     # else:
     #     level[2].append('Add license details')
 
+
+    content += '<h2>Monitoring status</h2>'
+    content += '<ac:structured-macro ac:name="newtablink">'
+    content += '<ac:parameter ac:name="url">%s</ac:parameter>' % htmlAttr(service.self + '/monitoring')
+    content += '<ac:parameter ac:name="alias">Click for live status</ac:parameter>'
+    content += '</ac:structured-macro>\n'
 
     class Variant:
         pass
@@ -316,16 +340,15 @@ def report(service):
         for item in level[3]:
             evaluation += '<p>- %s</p>\n' % item
     else:
-        # evaluation += '<p><b>Provisional maturity level: 3</b> (subject to manual review)</p>\n'
-        pass
+        evaluation += '<p><b>Provisional maturity level: 3</b> (subject to manual review)</p>\n'
+        evaluation += '<p>Highest maturity level - no further actions required.</p>'
     if other:
         evaluation += '<p>Other issues, not affecting maturity level:</p>\n'
         for item in other:
             evaluation += '<p>- %s</p>\n' % item
 
-    if evaluation:
-        content += '<h2>Actions to improve the service description</h2>'
-        content += evaluation
+    content += '<h2>Actions to improve the service description</h2>'
+    content += evaluation
 
     return content
 
