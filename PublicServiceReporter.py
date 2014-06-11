@@ -45,6 +45,10 @@ def massageLink(link):
                     html = '<a href="%s">%s</a>' % (htmlAttr(link), htmlText(title))
     return html, action
 
+def panel(content, bgColor='#ffffff', borderColor='#cccc66'):
+    # panel needs to on one line, to match Confluence internal storage format,
+    # so that same-ness detection works. Internal content can conain newlines.
+    return '<ac:structured-macro ac:name="panel"><ac:parameter ac:name="bgColor">%s</ac:parameter><ac:parameter ac:name="borderStyle">solid</ac:parameter><ac:parameter ac:name="borderColor">%s</ac:parameter><ac:parameter ac:name="borderWidth">2</ac:parameter><ac:rich-text-body>%s</ac:rich-text-body></ac:structured-macro>' % (bgColor, borderColor, content)
 
 class DoNotInclude(Exception):
     pass
@@ -56,7 +60,7 @@ def report(service):
 
     content = ''
     content += '<p><b><a href="%s">%s</a></b>' % ((htmlAttr(service.self), htmlText(service.name)))
-    content += ' published in <ac:structured-macro ac:name="biodivcat"></ac:structured-macro> on '
+    content += ' published in <ac:structured-macro ac:name="biodivcat" /> on '
     content += '%s.</p>' % htmlText(isodate.parse_datetime(service.created_at).strftime('%b %d, %Y at %H:%M UTC'))
 
     # Getting the first summary attribute fetches the summary contents. Those
@@ -83,15 +87,7 @@ def report(service):
                 )
             assert html
             # Add each description into a panel to separate
-            content += '''<ac:structured-macro ac:name="panel">
-  <ac:parameter ac:name="bgColor">#ffffff</ac:parameter>
-  <ac:parameter ac:name="borderWidth">2</ac:parameter>
-  <ac:parameter ac:name="borderStyle">solid</ac:parameter>
-  <ac:parameter ac:name="borderColor">#cccc66</ac:parameter>
-  <ac:rich-text-body>'''
-            content += html
-            content += '''</ac:rich-text-body>
-</ac:structured-macro>'''
+            content += panel(html)
 
     categories = [category.name for category in summary.categories]
     if 'BioVeL' in categories:
@@ -126,15 +122,7 @@ def report(service):
                 )
             assert html
             # Add each description into a panel to separate
-            content += '''<ac:structured-macro ac:name="panel">
-  <ac:parameter ac:name="bgColor">#ffffff</ac:parameter>
-  <ac:parameter ac:name="borderWidth">2</ac:parameter>
-  <ac:parameter ac:name="borderStyle">solid</ac:parameter>
-  <ac:parameter ac:name="borderColor">#cccc66</ac:parameter>
-  <ac:rich-text-body>'''
-            content += html
-            content += '''</ac:rich-text-body>
-</ac:structured-macro>'''
+            content += panel(html)
     else:
         level[1].append('Add contact')
 
@@ -164,8 +152,8 @@ def report(service):
 
     content += '<h2>Monitoring status</h2>'
     content += '<ac:structured-macro ac:name="newtablink">'
-    content += '<ac:parameter ac:name="url">%s</ac:parameter>' % htmlAttr(service.self + '/monitoring')
     content += '<ac:parameter ac:name="alias">Click for live status</ac:parameter>'
+    content += '<ac:parameter ac:name="url">%s</ac:parameter>' % htmlAttr(service.self + '/monitoring')
     content += '</ac:structured-macro>\n'
 
     class Variant:
@@ -193,7 +181,7 @@ def report(service):
             check(deployment.endpoint, 'No endpoint'),
         ))
     content += '<h2>Versions</h2>'
-    content += '<table><tr><th>Variant</th><th>Deployment</th></tr>\n'
+    content += '<table><thead><tr><th>Variant</th><th>Deployment</th></tr></thead>\n<tbody>\n'
     for variant in variants.values():
         rowspan = len(variant.deployments)
         if rowspan == 0:
@@ -206,7 +194,7 @@ def report(service):
         content += '<tr><td%s>%s</td>\n' % (attr, variant.description)
         text = ['<td>%s</td></tr>\n' % deployment for deployment in variant.deployments]
         content += '<tr>'.join(text)
-    content += '</table>\n'
+    content += '</tbody></table>\n'
 
     svcDesc = ''
     for variant in service.variants:
@@ -341,7 +329,7 @@ def report(service):
             evaluation += '<p>- %s</p>\n' % item
     else:
         evaluation += '<p><b>Provisional maturity level: 3</b> (subject to manual review)</p>\n'
-        evaluation += '<p>Highest maturity level - no further actions required.</p>'
+        evaluation += '<p>Highest maturity level - no further actions required.</p>\n'
     if other:
         evaluation += '<p>Other issues, not affecting maturity level:</p>\n'
         for item in other:

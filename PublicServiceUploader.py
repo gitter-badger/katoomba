@@ -43,21 +43,13 @@ if __name__ == '__main__':
         subKeys = sortedKeys[i:i+split]
         content += '<ac:layout-cell>'
         for serviceName in subKeys:
-            content += '''
-<ac:structured-macro ac:name="panel">
-  <ac:parameter ac:name="bgColor">#f3ffac</ac:parameter>
-  <ac:parameter ac:name="borderWidth">2</ac:parameter>
-  <ac:parameter ac:name="borderStyle">solid</ac:parameter>
-  <ac:parameter ac:name="borderColor">#cccc66</ac:parameter>
-  <ac:rich-text-body>
-    <p><b>
+            serviceLink = '''<p><b>
       <ac:link>
         <ri:page ri:content-title="%s" />
           <ac:plain-text-link-body><![CDATA[%s]]></ac:plain-text-link-body>
       </ac:link>
-    </b></p>
-  </ac:rich-text-body>
-</ac:structured-macro>''' % (pageNameMap[serviceName], serviceName)
+    </b></p>''' % (pageNameMap[serviceName], serviceName)
+            content += PublicServiceReporter.panel(serviceLink, bgColor='#f3ffac')
         content += '</ac:layout-cell>\n'
     content += '</ac:layout-section>\n'
     content += '''<ac:layout-section ac:type="single">
@@ -70,7 +62,5 @@ if __name__ == '__main__':
 
     print('Publishing %s' % confluenceParentTitle)
     # Confluence detects if this page is identical to the previous version, and
-    # does not create a new revision.  Confluence does not detect this situation
-    # for the service-specific pages, due to transformations it does to the
-    # markup
+    # does not create a new revision.
     confluence.publish(content, confluenceSpaceKey, confluenceParentTitle, confluence.getPageId(confluenceSpaceKey, 'BioVeL Wiki'))

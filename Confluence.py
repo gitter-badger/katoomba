@@ -55,10 +55,9 @@ class Server:
                 raise RuntimeError(page['error']['message'])
         else:
             # Do not need to check if content is the same. Confluence will
-            # check for us.  However, some pages may be "expanded" by
-            # Confluence, so will have a different format when reading.  These
-            # pages will get updated each time, even though they are really the
-            # same.
+            # check for us.  Need to be careful with macros, as the order of
+            # arguments may be different, and there a are no newlines between
+            # arguments
             # prevContent = page['content']
 
             # Although Confluence documentation states that additional arguments are
