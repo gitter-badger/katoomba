@@ -5,6 +5,7 @@ from config import confluenceHost, confluenceUser, confluencePass, serviceCatalo
 # This page will be completely overwritten by the script!
 confluenceSpaceKey = 'doc'
 confluenceParentTitle = 'Supported Services'
+updateServicePages = True # setting to False will only update index page
 
 if __name__ == '__main__':
     confluence = Confluence.Server(confluenceHost, confluenceUser, confluencePass)
@@ -26,7 +27,8 @@ if __name__ == '__main__':
         else:
             pageName = 'BioVeL Service - %s' % service.name
             print('Publishing %s' % pageName)
-            confluence.publish(content, confluenceSpaceKey, pageName, parentId)
+            if updateServicePages:
+                confluence.publish(content, confluenceSpaceKey, pageName, parentId)
             pageNameMap[service.name] = pageName
     content = '<ac:layout>'
     ncols = 3
@@ -67,4 +69,8 @@ if __name__ == '__main__':
     content += '</ac:layout>\n'
 
     print('Publishing %s' % confluenceParentTitle)
-    confluence.publish(content, confluenceSpaceKey, confluenceParentTitle, confluence.getPageId(confluenceSpaceKey, 'Start'))
+    # Confluence detects if this page is identical to the previous version, and
+    # does not create a new revision.  Confluence does not detect this situation
+    # for the service-specific pages, due to transformations it does to the
+    # markup
+    confluence.publish(content, confluenceSpaceKey, confluenceParentTitle, confluence.getPageId(confluenceSpaceKey, 'BioVeL Wiki'))

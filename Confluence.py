@@ -21,6 +21,7 @@ class Server:
             data=json.dumps([space, title]), **self.params)
         response.raise_for_status()
         page = response.json()
+        assert 'id' in page, page.keys()
         pageId = page['id']
         return pageId
 
@@ -53,7 +54,12 @@ class Server:
             else:
                 raise RuntimeError(page['error']['message'])
         else:
-            prevContent = page['content']
+            # Do not need to check if content is the same. Confluence will
+            # check for us.  However, some pages may be "expanded" by
+            # Confluence, so will have a different format when reading.  These
+            # pages will get updated each time, even though they are really the
+            # same.
+            # prevContent = page['content']
 
             # Although Confluence documentation states that additional arguments are
             # ignored, updates fail unless we use the bare minimum of required arguments.
@@ -65,10 +71,10 @@ class Server:
                 'version': page['version'],
                 'parentId': page['parentId']
             }
-            pageUpdateOptions = dict(
-                versionComment = 'Triggered update',
-                minorEdit = False
-                )
+            # pageUpdateOptions = dict(
+            #     versionComment = 'Triggered update',
+            #     minorEdit = False
+            #     )
 
             response = requests.post(self.confluenceBase + '/storePage',
                 data=json.dumps([update]), **self.params)
@@ -77,5 +83,5 @@ class Server:
             newPage = response.json()
             if 'error' in newPage:
                 raise RuntimeError(newPage['error']['message'])
-            assert 'content' in newPage, newPage
-            newContent = newPage['content']
+            assert 'content' in newPage, newPage.keys()
+            # newContent = newPage['content']
