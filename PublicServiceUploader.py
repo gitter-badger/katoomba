@@ -21,7 +21,8 @@ if __name__ == '__main__':
     for service in services:
         serviceId = service.self.split('/')[-1]
         try:
-            content = PublicServiceReporter.report(service)
+            if updateServicePages:
+                content = PublicServiceReporter.report(service)
         except PublicServiceReporter.DoNotInclude:
             pass
         else:
