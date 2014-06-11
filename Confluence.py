@@ -58,8 +58,17 @@ class Server:
             # check for us.  Need to be careful with macros, as the order of
             # arguments may be different, and there a are no newlines between
             # arguments
-            # prevContent = page['content']
-
+            #
+            # If a page gets updated each time, uncomment the following lines
+            # to see the difference between the uploaded format and the internal
+            # Confluence format.
+            if False:
+                prevContent = page['content']
+                safeTitle = title.replace('/', '-')
+                with open("prev-%s.html" % safeTitle, 'wt') as f:
+                    f.write(prevContent)
+                with open("next-%s.html" % safeTitle, 'wt') as f:
+                    f.write(content)
             # Although Confluence documentation states that additional arguments are
             # ignored, updates fail unless we use the bare minimum of required arguments.
             update = {
