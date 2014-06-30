@@ -220,7 +220,15 @@ def report(service):
             for operation in interface.operations:
                 soap_operation = operation.resource.soap_operation
                 svcDesc += '<h3>%s</h3>\n' % htmlText(soap_operation.name)
-                descriptions = [soap_operation.description]
+                if soap_operation.description is None:
+                    # This description is usually derived from the top-level
+                    # service description. If this description is missing, then
+                    # a warning will be emitted for the missing top-level
+                    # description, so we do not emit a redundant warning here.
+                    # Completing the top-level warning should fix this problem.
+                    descriptions = []
+                else:
+                    descriptions = [soap_operation.description]
                 annotations = soap_operation.annotations.annotations.results
                 for annotation in annotations:
                     if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/description':
