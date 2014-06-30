@@ -94,21 +94,20 @@ class Resource:
 
 
 
-# A resource that acts like a string if used as a string, but fetches data
-# when attributes are requested
-class CacheResource(Resource):
+class CacheResource(str):
 
-    def __init__(self, resource, cache):
+    def __new__(cls, data, cache):
+        s = str.__new__(cls, data)
+        return s
 
-        result = cache.getResource(resource)
-        super().__init__(result, cache)
-        self._resource = resource
+    def __init__(self, data, cache):
+        self.__cache = cache
 
+    def __call__(self):
+        return self.__cache.getResource(self)
 
-    def __str__(self):
-
-        return self._resource
-
+    def __getattr__(self, name):
+        raise AttributeError("%s().%s" % (self, name))
 
 class NotValidResource(Exception):
 

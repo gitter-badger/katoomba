@@ -60,7 +60,7 @@ def report(service):
     level = ([], [], [], [])
     other = []
 
-    submitter = service.submitter.user
+    submitter = service.submitter().user
     user = submitter.name
     org = submitter.affiliation
     if org:
@@ -72,7 +72,7 @@ def report(service):
 
     # Getting the first summary attribute fetches the summary contents. Those
     # contents have 'service' and 'summary' objects to get to the real content.
-    summary = service.summary.service.summary
+    summary = service.summary().service.summary
 
     categories = summary.categories
     if categories:
@@ -118,20 +118,20 @@ def report(service):
 
     variants = {}
     for variant in service.variants:
-        v = variants[str(variant.resource)] = Variant()
+        v = variants[variant.resource] = Variant()
         name = variant.name
-        if hasattr(variant.resource, 'soap_service'):
+        if hasattr(variant.resource(), 'soap_service'):
             name += ' (SOAP)'
         else:
-            assert hasattr(variant.resource, 'rest_service'), variant.resource
+            assert hasattr(variant.resource(), 'rest_service'), variant.resource
             name += ' (REST)'
         v.description = '<a href="%s">%s</a>' % (htmlAttr(service.self + '/service_endpoint'), htmlText(name))
         v.deployments = []
     for deployment in service.deployments:
-        provided_variant = deployment.resource.service_deployment.provided_variant
-        variant = variants.get(str(provided_variant.resource))
+        provided_variant = deployment.resource().service_deployment.provided_variant
+        variant = variants.get(provided_variant.resource)
         if variant is None:
-            variant = variants[str(provided_variant.resource)] = Variant()
+            variant = variants[provided_variant.resource] = Variant()
             variant.description = '<a href="%s">%s</a> %s' % (htmlAttr(provided_variant.resource), htmlText(provided_variant.description), alert('(Unknown variant)'))
             variant.deployments = []
         variant.deployments.append('<code>%s</code><br />(%s - %s)' % (
@@ -155,7 +155,7 @@ def report(service):
     content += '</table>\n'
 
     for variant in service.variants:
-        resource = variant.resource
+        resource = variant.resource()
         if hasattr(resource, 'soap_service'):
             interface = resource.soap_service
             name = '%s (SOAP)' % variant.name
@@ -175,10 +175,18 @@ def report(service):
             if not interface.operations:
                 level[2].append('Add description of available operations for variant %s' % name)
             for operation in interface.operations:
-                soap_operation = operation.resource.soap_operation
+                soap_operation = operation.resource().soap_operation
                 content += '<h3>%s</h3>\n' % htmlText(soap_operation.name)
-                descriptions = [soap_operation.description]
-                annotations = soap_operation.annotations.annotations.results
+                if soap_operation.description is None:
+                    # This description is usually derived from the top-level
+                    # service description. If this description is missing, then
+                    # a warning will be emitted for the missing top-level
+                    # description, so we do not emit a redundant warning here.
+                    # Completing the top-level warning should fix this problem.
+                    descriptions = []
+                else:
+                    descriptions = [soap_operation.description]
+                annotations = soap_operation.annotations().annotations.results
                 for annotation in annotations:
                     if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/description':
                         descriptions.append(annotation.value.content)
@@ -192,7 +200,7 @@ def report(service):
                         content += '<p><b>%s</b> - %s</p>\n' % (htmlText(input.name), check(input.description, 'No description'))
                         if input.description is None:
                             level[3].append('Add description to operation "%s" input "%s"' % (htmlText(soap_operation.name), htmlText(input.name)))
-                        annotations = input.resource.soap_input.annotations.annotations.results
+                        annotations = input.resource().soap_input.annotations().annotations.results
                         for annotation in annotations:
                             if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
                                 example = annotation.value.content
@@ -204,7 +212,7 @@ def report(service):
                         content += '<p><b>%s</b> - %s</p>\n' % (htmlText(output.name), check(output.description, 'No description'))
                         if output.description is None:
                             level[3].append('Add description to operation "%s" output "%s"' % (htmlText(soap_operation.name), htmlText(output.name)))
-                        annotations = output.resource.soap_output.annotations.annotations.results
+                        annotations = output.resource().soap_output.annotations().annotations.results
                         for annotation in annotations:
                             if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
                                 example = annotation.value.content
@@ -222,7 +230,7 @@ def report(service):
             if not interface.resources:
                 level[2].append('Add description of available operations for variant %s' % name)
             for operation in interface.resources:
-                rest_operation = operation.resource.rest_resource.methods
+                rest_operation = operation.resource().rest_resource.methods
                 for method in rest_operation:
                     content += '<h3>%s</h3>\n' % htmlText(method.endpoint_label)
                     if method.description:
@@ -233,7 +241,7 @@ def report(service):
                         content += '<p>%s</p>' % alert('No description')
                         level[2].append('Add description to operation "%s"' % htmlText(method.endpoint_label))
 
-                    inputs = method.resource.rest_method.inputs.parameters
+                    inputs = method.resource().rest_method.inputs.parameters
                     if inputs:
                         content += '<h4>Inputs</h4>\n'
                         for input in inputs:
@@ -243,12 +251,12 @@ def report(service):
                                 description = alert('No description')
                                 level[3].append('Add description to operation "%s" input "%s"' % (htmlText(method.endpoint_label), htmlText(input.name)))
                             content += '<p><b>%s</b> - %s</p>\n' % (htmlText(input.name), description)
-                            annotations = input.resource.rest_parameter.annotations.annotations.results
+                            annotations = input.resource().rest_parameter.annotations().annotations.results
                             for annotation in annotations:
                                 if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
                                     example = annotation.value.content
                                     content += '<p>Example:\n<code>%s</code></p>\n' % htmlText(example)
-                    outputs = method.resource.rest_method.outputs.parameters
+                    outputs = method.resource().rest_method.outputs.parameters
                     if outputs:
                         content += '<h4>Outputs</h4>\n'
                         for output in outputs:
@@ -258,7 +266,7 @@ def report(service):
                                 description = alert('No description')
                                 level[3].append('Add description to operation "%s" output "%s"' % (htmlText(method.endpoint_label), htmlText(input.name)))
                             content += '<p><b>%s</b> - %s</p>\n' % (htmlText(output.name), description)
-                            annotations = output.resource.rest_parameter.annotations.annotations.results
+                            annotations = output.resource().rest_parameter.annotations().annotations.results
                             for annotation in annotations:
                                 if annotation.attribute.identifier == 'http://biodiversitycatalogue.org/attribute/exampledata':
                                     example = annotation.value.content
