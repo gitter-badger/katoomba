@@ -7,7 +7,7 @@ confluenceSpaceKey = 'doc'
 confluenceParentTitle = 'Supported Services'
 updateServicePages = True # setting to False will only update index page
 
-if __name__ == '__main__':
+def upload():
     confluence = Confluence.Server(confluenceHost, confluenceUser, confluencePass)
     pageNameMap = {
         # Any services that are not in BiodiversityCatalogue can be placed here.
@@ -65,3 +65,6 @@ if __name__ == '__main__':
     # Confluence detects if this page is identical to the previous version, and
     # does not create a new revision.
     confluence.publish(content, confluenceSpaceKey, confluenceParentTitle, confluence.getPageId(confluenceSpaceKey, 'BioVeL Wiki'))
+
+if __name__ == '__main__':
+    upload()
