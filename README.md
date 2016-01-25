@@ -1,5 +1,7 @@
 # Katoomba
 
+[![Join the chat at https://gitter.im/BioVeL/katoomba](https://badges.gitter.im/BioVeL/katoomba.svg)](https://gitter.im/BioVeL/katoomba?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Read a ServiceCatalographer instance and create a report for each service.
 
 Currently, this is geared towards reading BiodiversityCatalogue and reporting
